@@ -11,7 +11,7 @@ import 'katex/dist/katex.min.css';
 
 interface MarkdownEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string|undefined) => void;
   error?: string;
 }
 

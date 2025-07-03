@@ -7,6 +7,18 @@ import { FormEvent, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import MarkdownEditor from '@/components/EnhancedMarkdownEditor';
+import TagInput from '@/components/TagInput';
+import CategorySelect from '@/components/CategorySelect';
+
+interface Category {
+  id: number;
+  name: string;
+  color?: string;
+}
+
+interface Props {
+  categories: Category[];
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -23,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-export default function Create() {
+export default function Create({ categories }: Props) {
   const { data, setData, post, processing, errors, reset } = useForm({
     title: '',
     content: '',
@@ -32,6 +44,8 @@ export default function Create() {
     status: 'draft',
     allow_comments: true as boolean,
     meta_description: '',
+    tags: [] as string[],
+    categories: [] as number[],
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -69,7 +83,7 @@ export default function Create() {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Blog" />
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="container max-w-4xl mx-auto p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -176,6 +190,39 @@ export default function Create() {
               />
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 You can use Markdown formatting, including code blocks, tables, and math equations.
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label htmlFor="tags" className="text-lg font-semibold text-gray-900 dark:text-white">
+                Tags
+              </Label>
+              <TagInput
+                tags={data.tags}
+                onChange={(tags) => setData('tags', tags)}
+                placeholder="Add tags to help categorize your post..."
+                error={errors.tags}
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Add relevant tags to help readers find your content. Use hashtags like #javascript, #tutorial, #webdev.
+              </p>
+            </div>
+
+            {/* Categories */}
+            <div className="space-y-2">
+              <Label htmlFor="categories" className="text-lg font-semibold text-gray-900 dark:text-white">
+                Categories
+              </Label>
+              <CategorySelect
+                categories={categories}
+                selectedCategories={data.categories}
+                onChange={(categoryIds) => setData('categories', categoryIds)}
+                error={errors.categories}
+                placeholder="Select categories for your post..."
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Choose relevant categories to help organize your content and make it easier for readers to find.
               </p>
             </div>
 

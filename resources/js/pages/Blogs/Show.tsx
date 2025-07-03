@@ -175,7 +175,7 @@ export default function Show({ blog, auth }: Props) {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={blog.title} />
       
-      <div className="max-w-4xl mx-auto">
+      <div className="container max-w-4xl mx-auto">
         {/* Navigation */}
         <div className="flex justify-between items-center mb-6 px-6">
           <Link href="/blogs" className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">

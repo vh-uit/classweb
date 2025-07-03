@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blog;
+use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Like;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +54,9 @@ class BlogController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Blogs/Create');
+        return Inertia::render('Blogs/Create', [
+            'categories' => Category::all(['id', 'name', 'color'])
+        ]);
     }
 
     /**
@@ -70,6 +74,10 @@ class BlogController extends Controller
             'meta_description' => 'nullable|string',
             'slug' => 'nullable|string|max:255|unique:blogs,slug',
             'allow_comments' => 'boolean',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50',
+            'categories' => 'nullable|array',
+            'categories.*' => 'integer|exists:categories,id',
         ]);
 
         $data = [
@@ -90,6 +98,24 @@ class BlogController extends Controller
         }
 
         $blog = Blog::create($data);
+
+        // Handle tags
+        if (!empty($validated['tags'])) {
+            $tagIds = [];
+            foreach ($validated['tags'] as $tagName) {
+                $tag = Tag::firstOrCreate(
+                    ['name' => $tagName],
+                    ['slug' => \Str::slug($tagName)]
+                );
+                $tagIds[] = $tag->id;
+            }
+            $blog->tags()->sync($tagIds);
+        }
+
+        // Handle categories
+        if (!empty($validated['categories'])) {
+            $blog->categories()->sync($validated['categories']);
+        }
 
         $redirectRoute = $data['status'] === 'published'
             ? route('blogs.show', $blog->id)
@@ -148,7 +174,7 @@ class BlogController extends Controller
      */
     public function edit(string $id)
     {
-        $blog = Blog::findOrFail($id);
+        $blog = Blog::with(['tags', 'categories'])->findOrFail($id);
 
         // Check if the user is authorized to edit this blog
         if ($blog->user_id !== Auth::id() && !Auth::user()->isModerator()) {
@@ -156,7 +182,8 @@ class BlogController extends Controller
         }
 
         return Inertia::render('Blogs/Edit', [
-            'blog' => $blog
+            'blog' => $blog,
+            'categories' => Category::all(['id', 'name', 'color'])
         ]);
     }
 
@@ -182,6 +209,10 @@ class BlogController extends Controller
             'meta_description' => 'nullable|string',
             'slug' => 'nullable|string|max:255|unique:blogs,slug,' . $id,
             'allow_comments' => 'boolean',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50',
+            'categories' => 'nullable|array',
+            'categories.*' => 'integer|exists:categories,id',
         ]);
 
         $blog->title = $validated['title'];
@@ -205,6 +236,28 @@ class BlogController extends Controller
         }
 
         $blog->save();
+
+        // Handle tags
+        if (isset($validated['tags'])) {
+            $tagIds = [];
+            foreach ($validated['tags'] as $tagName) {
+                $tag = Tag::firstOrCreate(
+                    ['name' => $tagName],
+                    ['slug' => \Str::slug($tagName)]
+                );
+                $tagIds[] = $tag->id;
+            }
+            $blog->tags()->sync($tagIds);
+        } else {
+            $blog->tags()->detach();
+        }
+
+        // Handle categories
+        if (isset($validated['categories'])) {
+            $blog->categories()->sync($validated['categories']);
+        } else {
+            $blog->categories()->detach();
+        }
 
         $redirectRoute = $blog->status === 'published'
             ? route('blogs.show', $blog->id)
