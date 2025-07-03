@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -14,6 +14,9 @@ import {
   CodeBracketIcon,
   DocumentIcon,
   Square2StackIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
+  EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import 'highlight.js/styles/github-dark.css';
 import 'katex/dist/katex.min.css';
@@ -50,6 +53,9 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
   placeholder = 'Write your content in markdown...',
 }) => {
   const [activeTab, setActiveTab] = useState<'write' | 'preview' | 'split'>('split');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value as 'write' | 'preview' | 'split');
@@ -107,14 +113,117 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
     },
   };
 
+  // Fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
+  // Focus mode toggle
+  const toggleFocusMode = useCallback(() => {
+    setIsFocusMode(!isFocusMode);
+  }, [isFocusMode]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F11 for fullscreen
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+      // Ctrl/Cmd + Shift + F for focus mode
+      if (e.key === 'F' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        toggleFocusMode();
+      }
+      // Escape to exit modes
+      if (e.key === 'Escape') {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else if (isFocusMode) {
+          setIsFocusMode(false);
+        }
+      }
+    };
+
+    if (containerRef.current) {
+      containerRef.current.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('keydown', handleKeyDown);
+      }
+    };
+  }, [isFullscreen, isFocusMode, toggleFullscreen, toggleFocusMode]);
+
+  // Dynamic height calculation
+  const getEditorHeight = () => {
+    if (isFullscreen) {
+      return 'calc(100vh - 200px)';
+    }
+    if (isFocusMode) {
+      return '70vh';
+    }
+    return height;
+  };
+
+  const containerClasses = cn(
+    'transition-all duration-300 ease-in-out',
+    isFullscreen && 'fixed inset-0 z-50 bg-white dark:bg-gray-900 p-6 overflow-auto',
+    isFocusMode && !isFullscreen && 'relative z-10 bg-white dark:bg-gray-900 p-4 rounded-lg shadow-lg',
+    !isFullscreen && !isFocusMode && 'space-y-4',
+    className
+  );
+
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={containerClasses} ref={containerRef} tabIndex={-1}>
+      {/* Enhanced Toolbar for focus/fullscreen modes */}
+      {(isFocusMode || isFullscreen) && (
+        <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Markdown Editor
+          </h3>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleFocusMode}
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              title={`${isFocusMode ? 'Exit' : 'Enter'} Focus Mode (Ctrl+Shift+F)`}
+            >
+              {isFocusMode ? (
+                <EyeIcon className="h-4 w-4" />
+              ) : (
+                <EyeSlashIcon className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullscreen}
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              title={`${isFullscreen ? 'Exit' : 'Enter'} Fullscreen (F11)`}
+            >
+              {isFullscreen ? (
+                <ArrowsPointingInIcon className="h-4 w-4" />
+              ) : (
+                <ArrowsPointingOutIcon className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="flex flex-wrap items-center gap-1">
           {markdownHelpers.map((helper, index) => (
             <Button
               key={index}
+              type="button"
               variant="ghost"
               size="sm"
               className="h-8 px-2 text-xs font-mono hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -124,6 +233,38 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
               {helper.icon}
             </Button>
           ))}
+        </div>
+        
+        {/* Focus and Fullscreen Controls */}
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleFocusMode}
+            className="h-8 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            title={`${isFocusMode ? 'Exit' : 'Enter'} Focus Mode (Ctrl+Shift+F)`}
+          >
+            {isFocusMode ? (
+              <EyeIcon className="h-4 w-4" />
+            ) : (
+              <EyeSlashIcon className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleFullscreen}
+            className="h-8 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            title={`${isFullscreen ? 'Exit' : 'Enter'} Fullscreen (F11)`}
+          >
+            {isFullscreen ? (
+              <ArrowsPointingInIcon className="h-4 w-4" />
+            ) : (
+              <ArrowsPointingOutIcon className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
 
@@ -147,7 +288,7 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
         <TabsContent value="write" className="mt-4">
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <Editor
-              height={height}
+              height={getEditorHeight()}
               defaultLanguage="markdown"
               value={value}
               onChange={(val) => onChange(val || '')}
@@ -166,7 +307,7 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
         <TabsContent value="preview" className="mt-4">
           <div 
             className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900 overflow-auto"
-            style={{ height: typeof height === 'number' ? `${height}px` : height }}
+            style={{ height: getEditorHeight() }}
           >
             {value ? (
               <div className="prose prose-lg dark:prose-invert max-w-none">
@@ -224,7 +365,7 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
                 </div>
               </div>
               <Editor
-                height={height}
+                height={getEditorHeight()}
                 defaultLanguage="markdown"
                 value={value}
                 onChange={(val) => onChange(val || '')}
@@ -249,7 +390,7 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
               </div>
               <div 
                 className="p-6 bg-white dark:bg-gray-900 overflow-auto"
-                style={{ height: typeof height === 'number' ? `${height}px` : height }}
+                style={{ height: getEditorHeight() }}
               >
                 {value ? (
                   <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -298,9 +439,30 @@ const EnhancedMarkdownEditor: React.FC<EnhancedMarkdownEditorProps> = ({
         </TabsContent>
       </Tabs>
 
+      {/* Keyboard shortcuts hint for focus/fullscreen modes */}
+      {(isFocusMode || isFullscreen) && (
+        <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Keyboard Shortcuts:
+          </h5>
+          <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <li><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">F11</kbd> - Toggle Fullscreen</li>
+            <li><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Ctrl+Shift+F</kbd> - Toggle Focus Mode</li>
+            <li><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Escape</kbd> - Exit Current Mode</li>
+            <li><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Ctrl+B</kbd> - Bold • <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Ctrl+I</kbd> - Italic</li>
+          </ul>
+        </div>
+      )}
+
       {error && (
-        <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <div className={cn(
+          "flex items-center gap-2 text-red-600 dark:text-red-400 text-sm",
+          (isFocusMode || isFullscreen) && "text-base"
+        )}>
+          <svg className={cn(
+            "w-4 h-4",
+            (isFocusMode || isFullscreen) && "w-5 h-5"
+          )} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {error}
