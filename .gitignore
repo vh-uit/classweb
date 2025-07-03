@@ -1,0 +1,125 @@
+# Laravel Framework
+/.phpunit.cache
+/bootstrap/ssr
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/pail
+/vendor
+
+# Environment files
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+
+# Database
+*.sqlite
+*.sqlite-journal
+database.sqlite
+
+# PHP and Laravel
+.phpactor.json
+.phpunit.result.cache
+composer.lock
+
+# Node.js and npm/yarn
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Build outputs and caches
+/public/build/*
+/public/hot
+mix-manifest.json
+webpack-stats.json
+.cache/
+.temp/
+.tmp/
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage and testing
+/coverage/
+/.phpunit.cache
+
+# IDE and editors
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.DS_Store
+Thumbs.db
+
+# Laravel specific
+Homestead.json
+Homestead.yaml
+/auth.json
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Windows
+$RECYCLE.BIN/
+Desktop.ini
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.com.apple.timemachine.donotpresent
+
+# Linux
+.nfs*
+
+# React and frontend specific
+dist/
+build/
+
+# Laravel Telescope
+/public/vendor/telescope/
+
+# Laravel Horizon  
+/public/vendor/horizon/
+
+# Vagrant
+.vagrant/
+
+# Docker
+.docker/
